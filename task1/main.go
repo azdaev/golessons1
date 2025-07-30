@@ -19,11 +19,11 @@ func main() {
 		Posts:  make(map[int]handler.Post),
 	}
 
-	r.POST("/posts", postsHandler.CreatePostHandler)
-	// r.GET("/posts/:id", handler.GetPostHandler)
-	// r.GET("/posts", handler.GetPostsHandler)
-	// r.DELETE("/posts/:id", handler.DeletePostHandler)
-	// r.PUT("/posts/:id", handler.UpdatePostHandler)
+	r.POST("/posts", postsHandler.CreatePost)
+	r.GET("/posts/:id", postsHandler.GetPostById)
+	r.GET("/posts", postsHandler.GetPosts)
+	r.DELETE("/posts/:id", postsHandler.DeletePost)
+	r.PUT("/posts/:id", postsHandler.UpdatePost)
 
 	r.Run(":8085")
 }
