@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"log"
 	"net/http"
 	"url-shortener-1/repo"
 
@@ -53,6 +54,7 @@ func (h *Handler) CreateLink(c *gin.Context) {
 		return
 	}
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		log.Println("Ошибка БД: ", err)
 		c.JSON(http.StatusInternalServerError, "Ошибка базы данных")
 		return
 	}
