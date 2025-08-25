@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,7 +12,7 @@ type LinksCache struct {
 	rdb *redis.Client
 }
 
-func NewLinksCache(rdb *redis.Client) *LinksCache {
+func New(rdb *redis.Client) *LinksCache {
 	return &LinksCache{
 		rdb: rdb,
 	}
@@ -22,13 +23,17 @@ func (c *LinksCache) StoreLink(shortLink string, longLink string) error {
 	if cmd.Err() != nil {
 		return fmt.Errorf("error StoreLink: %w", cmd.Err())
 	}
+
 	return nil
 }
 
-func (c *LinksCache) GetLongLink(shortLink string) (string, error) {
+func (c *LinksCache) GetLink(shortLink string) (string, error) {
 	cmd := c.rdb.Get(shortLink)
 	if cmd.Err() != nil {
-		return "", fmt.Errorf("error GetLongLink: %w", cmd.Err())
+		if errors.Is(cmd.Err(), redis.Nil) {
+			return "", nil
+		}
+		return "", fmt.Errorf("error GetLink: %w", cmd.Err())
 	}
 
 	return cmd.Val(), nil

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 	"unicode"
+
 	"url-shortener-1/cache"
 	"url-shortener-1/repo"
 
@@ -35,7 +36,7 @@ type LinkResponse struct {
 	ShortLink string `json:"short_link"`
 }
 
-func NewHandler(linksRepo *repo.Repository, linksCache *cache.LinksCache) Handler {
+func New(linksRepo *repo.Repository, linksCache *cache.LinksCache) Handler {
 	return Handler{
 		LinksRepository: linksRepo,
 		LinksCache:      linksCache,
@@ -133,9 +134,14 @@ func (h *Handler) Redirect(c *gin.Context) {
 	shortLink := c.Param("path")
 
 	start := time.Now()
-	longLink, err := h.LinksCache.GetLongLink(shortLink)
+	longLink, err := h.LinksCache.GetLink(shortLink)
+	if err != nil {
+		log.Println("error LinksCache.GetLink: ", err)
+	}
+
 	if longLink == "" {
 		longLink, err = h.LinksRepository.GetLongByShort(c, shortLink)
+		log.Println("via db: ", time.Since(start))
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				c.JSON(http.StatusNotFound, "Ссылка не найдена")
@@ -145,9 +151,8 @@ func (h *Handler) Redirect(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, "Произошла ошибка, попробуйте позже")
 			return
 		}
-		log.Println("via db: ", time.Since(start))
 	} else {
-		log.Print("via cache: ", time.Since(start))
+		log.Println("via cache: ", time.Since(start))
 	}
 
 	err = h.LinksRepository.StoreRedirect(c, repo.StoreRedirectParams{

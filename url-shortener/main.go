@@ -16,6 +16,8 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+const cacheLinksInterval = time.Hour
+
 func main() {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
@@ -35,21 +37,21 @@ func main() {
 		log.Fatal("Ошибка при подключении к БД: ", err)
 	}
 
-	linksRepository := repo.NewRepository(conn)
-	linksCache := cache.NewLinksCache(rdb)
-	linksHandler := handler.NewHandler(linksRepository, linksCache)
+	linksRepository := repo.New(conn)
+	linksCache := cache.New(rdb)
+	linksHandler := handler.New(linksRepository, linksCache)
 
-	go func() {
-		err := cacheMostPopularLinks(context.Background(), conn, linksCache)
+	go func() { // TODO: вынести из main.go в другое место
+		err := cachePopularLinks(linksRepository, linksCache)
 		if err != nil {
-			log.Println("error cacheMostPopularLinks: ", err)
+			log.Println(err)
 		}
 
-		c := time.Tick(1 * time.Hour)
+		c := time.Tick(cacheLinksInterval)
 		for range c {
-			err := cacheMostPopularLinks(context.Background(), conn, linksCache)
+			err := cachePopularLinks(linksRepository, linksCache)
 			if err != nil {
-				log.Println("error cacheMostPopularLinks: ", err)
+				log.Println(err)
 			}
 		}
 	}()
@@ -71,34 +73,16 @@ func main() {
 	r.Run(":8080")
 }
 
-func cacheMostPopularLinks(ctx context.Context, repo *pgx.Conn, cache *cache.LinksCache) error {
-	rows, err := repo.Query(
-		ctx,
-		`select
-		        short_link,
-				long_link
-		   from redirects
-	   group by short_link, long_link
-	   order by count(id) desc
-		  limit 10;`,
-	)
+func cachePopularLinks(linksRepository *repo.Repository, linksCache *cache.LinksCache) error { // TODO: вынести из main.go в другое место
+	links, err := linksRepository.GetPopularLinks(context.Background(), 10)
 	if err != nil {
-		return fmt.Errorf("error cacheMostPopularLinks: %w", err)
+		return fmt.Errorf("error updateCache GetPopularLinks: %w", err)
 	}
 
-	for rows.Next() {
-		var (
-			shortLink string
-			longLink  string
-		)
-		err := rows.Scan(&shortLink, &longLink)
+	for _, link := range links {
+		err := linksCache.StoreLink(link.Short, link.Long)
 		if err != nil {
-			return fmt.Errorf("error scan in cacheMostPopularLinks: %w", err)
-		}
-
-		err = cache.StoreLink(shortLink, longLink)
-		if err != nil {
-			return fmt.Errorf("error StoreLink in cacheMostPopularLinks: %w", err)
+			return fmt.Errorf("error updateCache StoreLink: %w", err)
 		}
 	}
 

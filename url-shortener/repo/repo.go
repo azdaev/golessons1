@@ -1,7 +1,9 @@
 package repo
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"log"
 	"time"
 
@@ -23,11 +25,16 @@ type Redirect struct {
 	CreatedAt time.Time
 }
 
+type LinkPair struct {
+	Short string
+	Long  string
+}
+
 type Repository struct {
 	db *pgx.Conn
 }
 
-func NewRepository(db *pgx.Conn) *Repository {
+func New(db *pgx.Conn) *Repository {
 	return &Repository{
 		db: db,
 	}
@@ -101,6 +108,36 @@ func (r *Repository) GetRedirectsByShortLink(c *gin.Context, shortLink string) (
 			return nil, err
 		}
 		res = append(res, redirect)
+	}
+
+	return res, nil
+}
+
+func (r *Repository) GetPopularLinks(ctx context.Context, n int) ([]LinkPair, error) {
+	rows, err := r.db.Query(
+		ctx,
+		`select
+				short_link,
+				long_link
+		   from redirects
+	   group by short_link, long_link
+	   order by count(id) desc
+		  limit $1;`,
+		n,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error GetPopularLinks: %w", err)
+	}
+
+	res := make([]LinkPair, 0, n)
+
+	for rows.Next() {
+		linkPair := LinkPair{}
+		err := rows.Scan(&linkPair.Short, &linkPair.Long)
+		if err != nil {
+			return nil, fmt.Errorf("error GetPopularLinks Scan: %w", err)
+		}
+		res = append(res, linkPair)
 	}
 
 	return res, nil
