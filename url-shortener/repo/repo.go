@@ -6,29 +6,10 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"url-shortener-1/model"
 
-	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 )
-
-type StoreRedirectParams struct {
-	UserAgent string
-	LongLink  string
-	ShortLink string
-}
-
-type Redirect struct {
-	Id        int
-	LongLink  string
-	ShortLink string
-	UserAgent string
-	CreatedAt time.Time
-}
-
-type LinkPair struct {
-	Short string
-	Long  string
-}
 
 type Repository struct {
 	db *pgx.Conn
@@ -40,8 +21,8 @@ func New(db *pgx.Conn) *Repository {
 	}
 }
 
-func (r *Repository) CreateLink(c *gin.Context, longLink string, shortLink string) error {
-	_, err := r.db.Exec(c, "insert into links (long_link, short_link) VALUES ($1, $2)", longLink, shortLink)
+func (r *Repository) CreateLink(ctx context.Context, longLink string, shortLink string) error {
+	_, err := r.db.Exec(ctx, "insert into links (long_link, short_link) VALUES ($1, $2)", longLink, shortLink)
 	if err != nil {
 		return err
 	}
@@ -49,10 +30,10 @@ func (r *Repository) CreateLink(c *gin.Context, longLink string, shortLink strin
 	return nil
 }
 
-func (r *Repository) GetLongByShort(c *gin.Context, shortLink string) (string, error) {
+func (r *Repository) GetLongByShort(ctx context.Context, shortLink string) (string, error) {
 	start := time.Now()
 	var longLink string
-	err := r.db.QueryRow(c, "SELECT long_link FROM links WHERE short_link=$1", shortLink).Scan(&longLink)
+	err := r.db.QueryRow(ctx, "SELECT long_link FROM links WHERE short_link=$1", shortLink).Scan(&longLink)
 	if err != nil {
 		return "", err
 	}
@@ -61,9 +42,9 @@ func (r *Repository) GetLongByShort(c *gin.Context, shortLink string) (string, e
 	return longLink, err
 }
 
-func (r *Repository) GetShortByLong(c *gin.Context, longLink string) (string, error) {
+func (r *Repository) GetShortByLong(ctx context.Context, longLink string) (string, error) {
 	var shortLink string
-	err := r.db.QueryRow(c, "SELECT short_link FROM links WHERE long_link=$1", longLink).Scan(&shortLink)
+	err := r.db.QueryRow(ctx, "SELECT short_link FROM links WHERE long_link=$1", longLink).Scan(&shortLink)
 	if err != nil {
 		return "", err
 	}
@@ -71,9 +52,9 @@ func (r *Repository) GetShortByLong(c *gin.Context, longLink string) (string, er
 	return shortLink, err
 }
 
-func (r *Repository) IsShortExists(c *gin.Context, shortLink string) (bool, error) {
+func (r *Repository) IsShortExists(ctx context.Context, shortLink string) (bool, error) {
 	existingShortLink := ""
-	err := r.db.QueryRow(c, "select short_link from links where short_link=$1", shortLink).Scan(&existingShortLink)
+	err := r.db.QueryRow(ctx, "select short_link from links where short_link=$1", shortLink).Scan(&existingShortLink)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil
@@ -84,8 +65,8 @@ func (r *Repository) IsShortExists(c *gin.Context, shortLink string) (bool, erro
 	return true, nil
 }
 
-func (r *Repository) StoreRedirect(c *gin.Context, params StoreRedirectParams) error {
-	_, err := r.db.Exec(c, "insert into redirects (user_agent, short_link, long_link) values ($1, $2, $3)",
+func (r *Repository) StoreRedirect(ctx context.Context, params model.StoreRedirectParams) error {
+	_, err := r.db.Exec(ctx, "insert into redirects (user_agent, short_link, long_link) values ($1, $2, $3)",
 		params.UserAgent,
 		params.ShortLink,
 		params.LongLink,
@@ -93,16 +74,16 @@ func (r *Repository) StoreRedirect(c *gin.Context, params StoreRedirectParams) e
 	return err
 }
 
-func (r *Repository) GetRedirectsByShortLink(c *gin.Context, shortLink string) ([]Redirect, error) {
-	rows, err := r.db.Query(c, "select id, short_link, long_link, user_agent, created_at from redirects where short_link = $1", shortLink)
+func (r *Repository) GetRedirectsByShortLink(ctx context.Context, shortLink string) ([]model.Redirect, error) {
+	rows, err := r.db.Query(ctx, "select id, short_link, long_link, user_agent, created_at from redirects where short_link = $1", shortLink)
 	if err != nil {
 		return nil, err
 	}
 
-	res := make([]Redirect, 0)
+	res := make([]model.Redirect, 0)
 
 	for rows.Next() {
-		var redirect Redirect
+		var redirect model.Redirect
 		err := rows.Scan(&redirect.Id, &redirect.ShortLink, &redirect.LongLink, &redirect.UserAgent, &redirect.CreatedAt)
 		if err != nil {
 			return nil, err
@@ -113,7 +94,7 @@ func (r *Repository) GetRedirectsByShortLink(c *gin.Context, shortLink string) (
 	return res, nil
 }
 
-func (r *Repository) GetPopularLinks(ctx context.Context, n int) ([]LinkPair, error) {
+func (r *Repository) GetPopularLinks(ctx context.Context, n int) ([]model.LinkPair, error) {
 	rows, err := r.db.Query(
 		ctx,
 		`select
@@ -129,10 +110,10 @@ func (r *Repository) GetPopularLinks(ctx context.Context, n int) ([]LinkPair, er
 		return nil, fmt.Errorf("error GetPopularLinks: %w", err)
 	}
 
-	res := make([]LinkPair, 0, n)
+	res := make([]model.LinkPair, 0, n)
 
 	for rows.Next() {
-		linkPair := LinkPair{}
+		linkPair := model.LinkPair{}
 		err := rows.Scan(&linkPair.Short, &linkPair.Long)
 		if err != nil {
 			return nil, fmt.Errorf("error GetPopularLinks Scan: %w", err)
