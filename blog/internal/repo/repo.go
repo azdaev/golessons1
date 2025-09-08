@@ -126,7 +126,7 @@ func (r *Repository) GetUser(ctx context.Context, id int) (model.User, error) {
 		&user.UpdatedAt,
 	)
 	if err != nil {
-		return model.User{}, fmt.Errorf("error in GetUser: %w", err)
+		return model.User{}, fmt.Errorf("error in Scan: %w", err)
 	}
 	return user, nil
 }
@@ -166,10 +166,10 @@ func (r *Repository) UpdateUser(ctx context.Context, id int, user UpdateUser) (m
 	var updatedUser model.User
 	err := r.db.QueryRow(
 		ctx,
-		`update user
+		`update users
 			set name=COALESCE($1, name),
 				email=COALESCE($2, email),
-				is_admin=COALESCE($3, is_admin)б
+				is_admin=COALESCE($3, is_admin),
 				updated_at=now()
 	      where id=$4
 	  returning id,

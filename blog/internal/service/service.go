@@ -1,7 +1,6 @@
 package service
 
 import (
-	"blog/internal/handler"
 	"blog/internal/model"
 	"blog/internal/repo"
 	"context"
@@ -10,17 +9,23 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-type Service struct {
-	repo repo.Repository
+type CreateUserReq struct {
+	Name     string `json:"name"`
+	Password string `json:"password"`
+	Email    string `json:"email"`
 }
 
-func New(repo repo.Repository) *Service {
+type Service struct {
+	repo *repo.Repository
+}
+
+func New(repo *repo.Repository) *Service {
 	return &Service{
 		repo: repo,
 	}
 }
 
-func (s *Service) CreateUser(ctx context.Context, user handler.CreateUserReq) error {
+func (s *Service) CreateUser(ctx context.Context, user CreateUserReq) error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return fmt.Errorf("error bcrypt.GenerateFromPassword: %w", err)
