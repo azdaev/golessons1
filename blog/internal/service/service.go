@@ -51,3 +51,30 @@ func (s *Service) GetUser(ctx context.Context, id int) (model.User, error) {
 
 	return user, nil
 }
+
+func (s *Service) GetUsers(ctx context.Context) ([]model.User, error) {
+	users, err := s.repo.GetUsers(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("error repo.GetUsers: %w", err)
+	}
+
+	return users, nil
+}
+
+func (b *Service) GetPosts(ctx context.Context) ([]model.Post, error) {
+	posts, err := b.repo.GetPosts(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("service.GetPosts: %w", err)
+	}
+
+	return posts, nil
+}
+
+func (b *Service) GetPostsByUserID(ctx context.Context, userId int) ([]model.Post, error) {
+	posts, err := b.repo.GetPostsByUserID(ctx, userId)
+	if err != nil {
+		return nil, fmt.Errorf("error repo GetPostsByUserID: %w", err)
+	}
+
+	return posts, nil
+}

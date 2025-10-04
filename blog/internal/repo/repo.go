@@ -233,3 +233,96 @@ func (r *Repository) GetComment(ctx context.Context, id int) (Comment, error) {
 	}
 	return comment, nil
 }
+
+func (r *Repository) GetPosts(ctx context.Context) ([]model.Post, error) {
+	var posts []model.Post
+	rows, err := r.db.Query(
+		ctx,
+		`select
+				id,
+				user_id,
+				title,
+				body,
+				views,
+				created_at,
+				updated_at
+		   from posts`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("repo.GetPosts: %w", err)
+	}
+
+	for rows.Next() {
+		var post model.Post
+		err := rows.Scan(&post.Id,
+			&post.UserId,
+			&post.Title,
+			&post.Body,
+			&post.Views,
+			&post.CreatedAt,
+			&post.UpdatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("repo.GetPosts scan: %w", err)
+		}
+		posts = append(posts, post)
+	}
+
+	return posts, nil
+}
+
+func (r *Repository) GetPostsByUserID(ctx context.Context, userId int) ([]model.Post, error) {
+	rows, err := r.db.Query(ctx, "select id, user_id, title, body, views, created_at, updated_at from posts where user_id=$1", userId)
+	if err != nil {
+		return nil, fmt.Errorf("repo.GetPostsByUserID: %w", err)
+	}
+
+	var posts []model.Post
+	for rows.Next() {
+		var post model.Post
+		err := rows.Scan(&post.Id, &post.UserId, &post.Title, &post.Body, &post.Views, &post.CreatedAt, &post.UpdatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("repo.GetPostsByUserID scan: %w", err)
+		}
+		posts = append(posts, post)
+	}
+	return posts, nil
+}
+
+func (r *Repository) GetUsers(ctx context.Context, id int) ([]model.User, error) {
+	var users []model.User
+
+	rows, err := r.db.Query(
+		ctx,
+		`select
+				id,
+				name,
+				email,
+				is_admin,
+				created_at,
+				updated_at
+		   from users
+		  where id=$1`,
+		id,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("error in Query: %w", err)
+	}
+
+	for rows.Next() {
+		var user model.User
+		err := rows.Scan(
+			&user.Id,
+			&user.Name,
+			&user.Email,
+			&user.IsAdmin,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error in Scan: %w", err)
+		}
+		users = append(users, user)
+	}
+
+	return users, nil
+}

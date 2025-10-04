@@ -10,3 +10,13 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+type Post struct {
+	Id        int       `json:"id"`
+	UserId    int       `json:"user_id"`
+	Title     string    `json:"title"`
+	Body      string    `json:"body"`
+	Views     int       `json:"views"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}

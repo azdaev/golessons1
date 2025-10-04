@@ -1,529 +1,258 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>URL Shortener</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 600px;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .logo {
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            color: #666;
-            font-size: 1.1rem;
-        }
-
-        .form-group {
-            margin-bottom: 30px;
-        }
-
-        .input-container {
-            position: relative;
-            margin-bottom: 20px;
-        }
-
-        .input {
-            width: 100%;
-            padding: 15px 20px;
-            border: 2px solid #e1e5e9;
-            border-radius: 12px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            background: white;
-        }
-
-        .input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 15px;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .result {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-            display: none;
-        }
-
-        .result.show {
-            display: block;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Minimal Blog</title>
+        <style>
+            body {
+                font-family: Georgia, serif;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+                line-height: 1.6;
+                color: #333;
             }
-            to {
-                opacity: 1;
-                transform: translateY(0);
+
+            header {
+                text-align: center;
+                border-bottom: 2px solid #eee;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
             }
-        }
 
-        .result-item {
-            margin-bottom: 15px;
-        }
-
-        .result-label {
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 5px;
-        }
-
-        .result-value {
-            background: white;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
-            word-break: break-all;
-            font-family: monospace;
-        }
-
-        .copy-btn {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-top: 5px;
-            transition: background 0.3s ease;
-        }
-
-        .copy-btn:hover {
-            background: #218838;
-        }
-
-        .analytics-section {
-            margin-top: 30px;
-            padding-top: 30px;
-            border-top: 1px solid #e9ecef;
-        }
-
-        .analytics-input {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .analytics-input input {
-            flex: 1;
-        }
-
-        .analytics-input button {
-            width: auto;
-            padding: 15px 25px;
-            margin-bottom: 0;
-        }
-
-        .analytics-result {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 15px;
-            display: none;
-        }
-
-        .analytics-result.show {
-            display: block;
-            animation: slideIn 0.3s ease;
-        }
-
-        .analytics-stat {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border: 1px solid #dee2e6;
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #667eea;
-        }
-
-        .stat-label {
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .redirect-item {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            border-left: 4px solid #667eea;
-        }
-
-        .redirect-date {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 5px;
-        }
-
-        .redirect-agent {
-            font-size: 0.85rem;
-            color: #888;
-            font-family: monospace;
-        }
-
-        .error {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            border: 1px solid #f5c6cb;
-        }
-
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        @media (max-width: 600px) {
-            .container {
-                padding: 30px 20px;
+            h1 {
+                color: #2c3e50;
+                margin-bottom: 10px;
             }
-            
-            .analytics-input {
-                flex-direction: column;
+
+            .user-info {
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 5px;
+                margin-bottom: 30px;
             }
-            
-            .analytics-input button {
-                width: 100%;
+
+            .post {
+                margin-bottom: 30px;
+                padding-bottom: 20px;
+                border-bottom: 1px solid #eee;
             }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">🔗 LinkShort</div>
-            <div class="subtitle">Быстро и просто сокращайте ваши ссылки</div>
+
+            .post:last-child {
+                border-bottom: none;
+            }
+
+            .post-title {
+                color: #2c3e50;
+                margin-bottom: 10px;
+            }
+
+            .post-meta {
+                color: #7f8c8d;
+                font-size: 0.9em;
+                margin-bottom: 15px;
+            }
+
+            .post-content {
+                margin-bottom: 15px;
+            }
+
+            .user-selector {
+                margin-bottom: 20px;
+                text-align: center;
+            }
+
+            .user-selector select {
+                padding: 8px;
+                font-size: 16px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+            }
+
+            .loading {
+                text-align: center;
+                color: #7f8c8d;
+                font-style: italic;
+            }
+
+            .error {
+                color: #e74c3c;
+                text-align: center;
+                background: #fdf2f2;
+                padding: 15px;
+                border-radius: 5px;
+                margin: 20px 0;
+            }
+
+            .nav {
+                text-align: center;
+                margin-bottom: 30px;
+            }
+
+            .nav button {
+                padding: 10px 20px;
+                margin: 0 10px;
+                border: 1px solid #ddd;
+                background: white;
+                cursor: pointer;
+                border-radius: 4px;
+            }
+
+            .nav button.active {
+                background: #3498db;
+                color: white;
+                border-color: #3498db;
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <h1>Minimal Blog</h1>
+            <p>A simple blog powered by Go</p>
+        </header>
+
+        <div class="nav">
+            <button id="allPostsBtn" class="active" onclick="showAllPosts()">
+                All Posts
+            </button>
+            <button id="userPostsBtn" onclick="showUserView()">
+                Posts by User
+            </button>
         </div>
 
-        <div class="form-group">
-            <div class="input-container">
-                <input type="url" id="urlInput" class="input" placeholder="Введите длинную ссылку (например: https://example.com)" required>
-            </div>
-            <button id="shortenBtn" class="btn">Сократить ссылку</button>
-            
-            <div id="result" class="result">
-                <div class="result-item">
-                    <div class="result-label">Исходная ссылка:</div>
-                    <div id="originalUrl" class="result-value"></div>
-                </div>
-                <div class="result-item">
-                    <div class="result-label">Короткая ссылка:</div>
-                    <div id="shortUrl" class="result-value"></div>
-                    <button id="copyBtn" class="copy-btn">Копировать</button>
-                </div>
-            </div>
-
-            <div id="error" class="error" style="display: none;"></div>
+        <div id="userSelector" class="user-selector" style="display: none">
+            <label for="userSelect">Select User: </label>
+            <select id="userSelect" onchange="loadUserPosts()">
+                <option value="">Choose a user...</option>
+            </select>
         </div>
 
-        <div class="analytics-section">
-            <h3 style="margin-bottom: 20px; color: #495057;">📊 Аналитика ссылки</h3>
-            <div class="analytics-input">
-                <input type="text" id="analyticsInput" class="input" placeholder="Введите короткий код ссылки (например: abc123)">
-                <button id="analyticsBtn" class="btn">Показать статистику</button>
-            </div>
+        <div id="userInfo" class="user-info" style="display: none"></div>
 
-            <div id="analyticsResult" class="analytics-result">
-                <div class="analytics-stat">
-                    <div id="totalRedirects" class="stat-number">0</div>
-                    <div class="stat-label">Всего переходов</div>
-                </div>
-                <div id="redirectsList"></div>
-            </div>
-
-            <div id="analyticsError" class="error" style="display: none;"></div>
+        <div id="content">
+            <div class="loading">Loading posts...</div>
         </div>
-    </div>
 
-    <script>
-        const API_BASE = 'http://127.0.0.1:8080';
+        <script>
+            const API_BASE = "http://localhost:8080";
+            let currentView = "all";
 
-        // Элементы DOM
-        const urlInput = document.getElementById('urlInput');
-        const shortenBtn = document.getElementById('shortenBtn');
-        const result = document.getElementById('result');
-        const originalUrl = document.getElementById('originalUrl');
-        const shortUrl = document.getElementById('shortUrl');
-        const copyBtn = document.getElementById('copyBtn');
-        const error = document.getElementById('error');
+            // Load all posts on page load
+            document.addEventListener("DOMContentLoaded", function () {
+                loadAllPosts();
+                loadUsers();
+            });
 
-        const analyticsInput = document.getElementById('analyticsInput');
-        const analyticsBtn = document.getElementById('analyticsBtn');
-        const analyticsResult = document.getElementById('analyticsResult');
-        const totalRedirects = document.getElementById('totalRedirects');
-        const redirectsList = document.getElementById('redirectsList');
-        const analyticsError = document.getElementById('analyticsError');
-
-        // Функция для показа ошибки
-        function showError(message, isAnalytics = false) {
-            const errorElement = isAnalytics ? analyticsError : error;
-            errorElement.textContent = message;
-            errorElement.style.display = 'block';
-            setTimeout(() => {
-                errorElement.style.display = 'none';
-            }, 5000);
-        }
-
-        // Функция для скрытия результатов
-        function hideResults(isAnalytics = false) {
-            if (isAnalytics) {
-                analyticsResult.classList.remove('show');
-            } else {
-                result.classList.remove('show');
-            }
-        }
-
-        // Функция для показа загрузки
-        function setLoading(button, isLoading) {
-            if (isLoading) {
-                button.disabled = true;
-                const originalText = button.textContent;
-                button.innerHTML = '<span class="loading"></span>' + originalText;
-            } else {
-                button.disabled = false;
-                button.innerHTML = button.innerHTML.replace(/<span class="loading"><\/span>/, '');
-            }
-        }
-
-        // Сокращение ссылки
-        shortenBtn.addEventListener('click', async () => {
-            const url = urlInput.value.trim();
-            
-            if (!url) {
-                showError('Пожалуйста, введите ссылку');
-                return;
-            }
-
-            // Простая валидация URL
-            try {
-                new URL(url);
-            } catch {
-                showError('Пожалуйста, введите корректную ссылку (начинающуюся с http:// или https://)');
-                return;
-            }
-
-            hideResults();
-            setLoading(shortenBtn, true);
-
-            try {
-                const response = await fetch(`${API_BASE}/shorten`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ link: url })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    originalUrl.textContent = data.long;
-                    shortUrl.textContent = data.short;
-                    result.classList.add('show');
-                    
-                    // Автоматически заполняем поле аналитики
-                    const shortCode = data.short.split('/').pop();
-                    analyticsInput.value = shortCode;
-                } else {
-                    showError(data.message || 'Произошла ошибка при сокращении ссылки');
+            async function loadAllPosts() {
+                try {
+                    const response = await fetch(`${API_BASE}/posts`);
+                    const posts = await response.json();
+                    displayPosts(posts);
+                } catch (error) {
+                    showError("Failed to load posts: " + error.message);
                 }
-            } catch (err) {
-                showError('Ошибка соединения с сервером. Убедитесь, что сервер запущен на порту 8080');
-            } finally {
-                setLoading(shortenBtn, false);
-            }
-        });
-
-        // Копирование ссылки
-        copyBtn.addEventListener('click', async () => {
-            try {
-                await navigator.clipboard.writeText(shortUrl.textContent);
-                const originalText = copyBtn.textContent;
-                copyBtn.textContent = 'Скопировано!';
-                copyBtn.style.background = '#28a745';
-                setTimeout(() => {
-                    copyBtn.textContent = originalText;
-                    copyBtn.style.background = '#28a745';
-                }, 2000);
-            } catch (err) {
-                // Fallback для старых браузеров
-                const textArea = document.createElement('textarea');
-                textArea.value = shortUrl.textContent;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                
-                copyBtn.textContent = 'Скопировано!';
-                setTimeout(() => {
-                    copyBtn.textContent = 'Копировать';
-                }, 2000);
-            }
-        });
-
-        // Получение аналитики
-        analyticsBtn.addEventListener('click', async () => {
-            const shortCode = analyticsInput.value.trim();
-            
-            if (!shortCode) {
-                showError('Пожалуйста, введите короткий код ссылки', true);
-                return;
             }
 
-            hideResults(true);
-            setLoading(analyticsBtn, true);
-
-            try {
-                const response = await fetch(`${API_BASE}/analytics/${shortCode}`);
-                const data = await response.json();
-
-                if (response.ok) {
-                    totalRedirects.textContent = data.total_redirects;
-                    
-                    // Очищаем предыдущие результаты
-                    redirectsList.innerHTML = '';
-                    
-                    if (data.redirects && data.redirects.length > 0) {
-                        data.redirects.forEach(redirect => {
-                            const redirectItem = document.createElement('div');
-                            redirectItem.className = 'redirect-item';
-                            
-                            const date = new Date(redirect.CreatedAt).toLocaleString('ru-RU');
-                            
-                            redirectItem.innerHTML = `
-                                <div class="redirect-date">${date}</div>
-                                <div class="redirect-agent">${redirect.UserAgent || 'Неизвестный браузер'}</div>
-                            `;
-                            
-                            redirectsList.appendChild(redirectItem);
-                        });
-                    } else {
-                        redirectsList.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">Пока нет переходов по этой ссылке</div>';
-                    }
-                    
-                    analyticsResult.classList.add('show');
-                } else {
-                    if (response.status === 404) {
-                        showError('Ссылка не найдена. Проверьте правильность короткого кода', true);
-                    } else {
-                        showError(data.message || 'Произошла ошибка при получении аналитики', true);
-                    }
+            async function loadUsers() {
+                // Since we don't have a /users endpoint, we'll populate with common IDs
+                const userSelect = document.getElementById("userSelect");
+                for (let i = 1; i <= 10; i++) {
+                    const option = document.createElement("option");
+                    option.value = i;
+                    option.textContent = `User ${i}`;
+                    userSelect.appendChild(option);
                 }
-            } catch (err) {
-                showError('Ошибка соединения с сервером. Убедитесь, что сервер запущен на порту 8080', true);
-            } finally {
-                setLoading(analyticsBtn, false);
             }
-        });
 
-        // Обработка Enter в полях ввода
-        urlInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                shortenBtn.click();
+            async function loadUserPosts() {
+                const userId = document.getElementById("userSelect").value;
+                if (!userId) return;
+
+                try {
+                    // Load user info
+                    const userResponse = await fetch(
+                        `${API_BASE}/user/${userId}`,
+                    );
+                    const user = await userResponse.json();
+                    displayUserInfo(user);
+
+                    // Load user posts
+                    const postsResponse = await fetch(
+                        `${API_BASE}/user/${userId}/posts`,
+                    );
+                    const posts = await postsResponse.json();
+                    displayPosts(posts);
+                } catch (error) {
+                    showError("Failed to load user data: " + error.message);
+                }
             }
-        });
 
-        analyticsInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                analyticsBtn.click();
+            function displayUserInfo(user) {
+                const userInfoDiv = document.getElementById("userInfo");
+                userInfoDiv.innerHTML = `
+                <h3>${user.name || "User"}</h3>
+                <p><strong>Email:</strong> ${user.email || "Not provided"}</p>
+                <p><strong>User ID:</strong> ${user.id}</p>
+            `;
+                userInfoDiv.style.display = "block";
             }
-        });
 
-        // Автоматическое скрытие ошибок при вводе
-        urlInput.addEventListener('input', () => {
-            error.style.display = 'none';
-        });
+            function displayPosts(posts) {
+                const contentDiv = document.getElementById("content");
 
-        analyticsInput.addEventListener('input', () => {
-            analyticsError.style.display = 'none';
-        });
-    </script>
-</body>
+                if (!posts || posts.length === 0) {
+                    contentDiv.innerHTML =
+                        '<div class="loading">No posts found.</div>';
+                    return;
+                }
+
+                const postsHtml = posts
+                    .map(
+                        (post) => `
+                <article class="post">
+                    <h2 class="post-title">${post.title || "Untitled Post"}</h2>
+                    <div class="post-meta">
+                        ${post.created_at ? new Date(post.created_at).toLocaleDateString() : "Unknown date"}
+                        ${post.user_id ? ` • User ${post.user_id}` : ""}
+                    </div>
+                    <div class="post-content">
+                        ${post.content || post.body || "No content available."}
+                    </div>
+                </article>
+            `,
+                    )
+                    .join("");
+
+                contentDiv.innerHTML = postsHtml;
+            }
+
+            function showError(message) {
+                const contentDiv = document.getElementById("content");
+                contentDiv.innerHTML = `<div class="error">${message}</div>`;
+            }
+
+            function showAllPosts() {
+                currentView = "all";
+                document.getElementById("allPostsBtn").classList.add("active");
+                document
+                    .getElementById("userPostsBtn")
+                    .classList.remove("active");
+                document.getElementById("userSelector").style.display = "none";
+                document.getElementById("userInfo").style.display = "none";
+                loadAllPosts();
+            }
+
+            function showUserView() {
+                currentView = "user";
+                document
+                    .getElementById("allPostsBtn")
+                    .classList.remove("active");
+                document.getElementById("userPostsBtn").classList.add("active");
+                document.getElementById("userSelector").style.display = "block";
+                document.getElementById("content").innerHTML =
+                    '<div class="loading">Select a user to view their posts.</div>';
+            }
+        </script>
+    </body>
 </html>

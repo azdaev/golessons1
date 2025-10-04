@@ -6,5 +6,5 @@
 | ⏳ | POST | `/posts/` | CreatePost | Создание нового поста |
 | ⏳ | GET | `/posts/` | GetPosts | Получение списка всех постов |
 | ⏳ | GET | `/posts/:id/` | GetPost | Получение информации о посте по ID |
-| ⏳ | POST | `/posts/:id/comments?reply_to=231e119` | CreateComment | Создание комментария к посту |
+| ⏳ | POST | `/posts/:id/comments/` | CreateComment | Создание комментария к посту |
 | ⏳ | GET | `/posts/:id/comments/` | GetCommentsByPostID | Получение всех комментариев к посту |
